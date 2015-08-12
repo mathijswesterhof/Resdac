@@ -1,0 +1,340 @@
+function Init()
+    print('|    booting                                      |')
+    print('+=================================================+')
+    print('|                                                 |')
+    print('| > modem side :                                  |')
+    print('|   port num   :                                  |')
+    print('|   label      :                                  |')
+    print('|                                                 |')
+    print('|   GO                                            |')
+    print('|                                                 |')
+    print('|   help                                          |')
+    print('+=================================================+')
+    while whileloop do
+        local event, key = os.pullEvent( "key" )
+        if key == keys.enter then
+            if pos == 1 then
+                term.setCursorPos(17,11)
+                print("            ")
+                term.setCursorPos(17,11)
+                ModemS = read()
+            elseif pos == 2 then
+                term.setCursorPos(17,12)
+                print("            ")
+                term.setCursorPos(17,12)
+                PrtNum = 0
+                PrtNum = read()
+            elseif pos == 3 then
+                term.setCursorPos(17,13)
+                print("            ")
+                term.setCursorPos(17,13)
+                Labels = read()
+            elseif pos == 4 then
+                if ModemS == "" then
+                else
+                    if peripheral.isPresent(ModemS) then
+                        PrtNum = tonumber(PrtNum)
+                        if PrtNum == nil then
+                            term.setCursorPos(17,12)
+                            print("Not valid   ")
+                        else
+                            if ((PrtNum + 1000) > 1000) then
+                                if ((PrtNum + 1000) > 1998) then
+                                    term.setCursorPos(17,12)
+                                    print("To high     ")
+                                else
+                                    os.setComputerLabel(Labels);
+    
+                                    modemwrap = ModemS
+                                    PrtNum = 1110 + PrtNum
+                                    modemport = 0;
+                                    modem =peripheral.wrap(modemwrap)
+                                    modem.open(modemport)
+                                    term.setCursorPos(6,8)
+                                    print("initializing")
+                                    sleep(1)
+                                    modem.transmit(coreport, modemport, "NEWPC"..tostring(PrtNum))
+                                    os.startTimer(5)
+                                    local event, value1, value2, value3, value4, value5 = os.pullEvent()
+                                    if event == "modem_message" then
+                                        if value4 == "true" then
+                                            term.setCursorPos(1,8)
+                                            print('|  n:',PrtNum,'  M:                                     |')
+                                            print('+=================================================+')
+                                            print('|                                                 |')
+                                            print('|                                                 |')
+                                            print('|                                                 |')
+                                            print('|              Setting things up                  |')
+                                            print('|              For you                            |')
+                                            print('|                                                 |')
+                                            print('|                                                 |')
+                                            print('|                                                 |')
+                                            print('+=================================================+')
+
+                                            modemport = PrtNum
+                                            handle = fs.open("ResdacCore", fs.exists("ResdacCore") and "r" or "w")
+                                            PrtNum = tostring(PrtNum)
+                                            handle.write(""..PrtNum..modemwrap)
+                                            handle.close()
+                                            sleep(2)
+
+                                            pos = 1
+                                            PrintMenuOne()
+                                            Menu()
+                                        else
+                                            term.setCursorPos(17,12)
+                                            print("already used")
+                                        end
+                                    elseif event == "timer" then
+                                        term.setCursorPos(6,8)
+                                        print("connection timed out, Check modem")
+                                        sleep(2)
+                                        term.setCursorPos(6,8)
+                                        print("rebooting                        ")
+                                        sleep(1)
+                                        os.reboot()
+                                    end
+                                end
+                            else
+                                term.setCursorPos(17,12)
+                                print("To low      ")
+                            end
+                        end
+                    else
+                        term.setCursorPos(17,11)
+                        print("Wrong       ")
+                    end
+                end
+            elseif pos == 5 then
+                term.setCursorPos(31,11)
+                print("side of modem")
+                term.setCursorPos(31,12)
+                print("count pc on CORE")
+                term.setCursorPos(31,13)
+                print("Name")
+            end
+        elseif key == keys.up then
+            SCP = 10 + pos
+            if SCP > 13 then
+                SCP = SCP +(SCP - 13)
+            end
+            term.setCursorPos(3,SCP)
+            print(' ')
+            pos = pos - 1
+            if pos == 0 then
+                pos = 5
+            end
+            SCP = 10 + pos
+            if SCP > 13 then
+                SCP = SCP +(SCP - 13)
+            end
+            term.setCursorPos(3,SCP)
+            print('>')
+        elseif key == keys.down then
+            SCP = 10 + pos
+            if SCP > 13 then
+                SCP = SCP +(SCP - 13)
+            end
+            term.setCursorPos(3,SCP)
+            print(' ')
+            pos = pos + 1
+            if pos == 6 then
+                pos = 1
+            end
+            SCP = 10 + pos
+            if SCP > 13 then
+                SCP = SCP +(SCP - 13)
+            end
+            term.setCursorPos(3,SCP)
+            print('>')
+        end
+    end
+end
+function Menu()
+    while whileloop do
+        local event, value1, value2, value3, value4, value5 = os.pullEvent()
+        if event == "key" then
+            if value1 == keys.enter then
+                if screen == 1 then
+                    if pos == 1 then       
+                    elseif pos == 2 then
+                        screen = 2
+                        pos = 1
+                        PrintMenuTwo()
+                    elseif pos == 3 then
+                        os.shutdown()
+                    end
+                elseif screen == 2 then
+                    if pos == 1 then
+                        whileloop = false
+                        term.clear()
+                        term.setCursorPos(1,1)
+                    elseif pos == 2 then
+                        term.setCursorPos(5,16)
+                        RednetRead = read()
+                        modem.transmit(coreport, modemport, RednetRead)
+                        PrintMenuTwo()
+                    elseif pos == 3 then
+                        screen = 4
+                        pos = 1
+                        MailCounter = 0
+                        term.setCursorPos(14,8)
+                        print("0    ")
+                        PrintMenuMail()
+                    elseif pos == 4 then
+                        screen = 3
+                        pos = 1
+                        PrintMenuThree()
+                    elseif pos == 5 then
+                        os.shutdown()
+                    end
+                elseif screen == 3 then
+                    pos = 1
+                    screen = 2
+                    PrintMenuTwo()
+                elseif screen == 4 then
+                    if pos == 1 then
+                       pos = 1
+                        screen = 2
+                        term.setCursorPos(13,9)
+                        print("==")
+                        message = {}
+                        PrintMenuTwo()
+                    end 
+                end
+            elseif value1 == keys.up then
+                if screen == 1 then
+                    pos = pos -1
+                    if pos == 0 then
+                        pos = 3
+                    end
+                    PrintMenuOne()
+                elseif screen == 2 then
+                    pos = pos - 1
+                    if pos == 0 then
+                        pos = 5
+                    end
+                    PrintMenuTwo()
+                end
+            elseif value1 == keys.down then
+                if screen == 1 then
+                    pos = pos + 1
+                    if pos == 4 then
+                        pos = 1
+                    end
+                    PrintMenuOne()
+                elseif screen == 2 then
+                    pos = pos + 1
+                    if pos == 6 then
+                        pos = 1
+                    end
+                    PrintMenuTwo()
+                end
+            end
+        elseif event == "modem_message" then
+            MailCounter = MailCounter +1
+            table.insert(message , value4)
+            term.setCursorPos(14,8)
+            print(MailCounter)
+        end
+    end
+end
+
+function PrintMenuOne()
+    term.setCursorPos(1,10)
+    print('|                                                 |')
+    print('|   login  [in progress]                          |')
+    print('|   start                                         |')
+    print('|   exit                                          |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('+=================================================+')
+    term.setCursorPos(3,pos + 10)
+    print('>')
+end
+function PrintMenuTwo()
+    term.setCursorPos(1,10)
+    print('|                                                 ')
+    print('|   Open core                                     ')
+    print('|   Send message                                  ')
+    print('|   Mail                                          ')
+    print('|   Help                                          ')
+    print('|   Exit                                          ')
+    print('|                                                 ')
+    print('|                                                 ')
+    term.setCursorPos(3,pos + 10)
+    print('>')
+end
+function PrintMenuThree()
+    term.setCursorPos(1,10)
+    print('| > back                                          ')
+    print('|                                                 ')
+    print('|   [modem]#[str]                                 ')
+    print('|   [modem]#[id]#[str]                            ')
+    print('|   [modem]#[protocol]#[id]#[string]              ')
+    print('|   rslookup#[protocol]                           ')
+    print('|   rslookup#[protocol]#[hostname]                ')
+    print('|   ex: wifi#5#Turtle1   ex: wan#net#2#respond    ')
+end
+function PrintMenuMail()
+    term.setCursorPos(1,9)
+    print('+===========/\\')
+    print('|                                                 ')
+    print('| >                                               ')
+    print('|                                                 ')
+    print('|                                                 ')
+    print('|                                                 ')
+    print('|                                                 ')
+    print('|                                                 ')
+    print('|                                                 ')
+    term.setCursorPos(5,11)
+    if #message > 0 then
+        print("back")
+        for i=1,#message do
+            term.setCursorPos(5,i + 11)
+            print(message[i])
+        end
+    else       
+        print("no new messages")
+    end
+    
+
+end
+-- end of function list
+
+pos = 1
+screen = 1
+coreport = 1110
+MailCounter = 0
+whileloop = true
+message = {}
+local oldpull=os.pullEvent
+os.pullEvent=os.pullEventRaw
+-- boot --
+term.clear()
+    term.setCursorPos(1,1)
+    print('+=================================================+')
+    print('|                                                 |')
+    print('|  +---   +----   ----  +---    ---    ----       |')
+    print('|  |   \\  |      |      |   \\  /   \\  /           |')
+    print('|  +----  +--     ---   |   |  +---+  |           |')
+    print('|  |  \\   |          |  |   /  |   |  \\           |')
+    print('|  |   \\  +----  ----   +---   |   |   ---- V1.7  |')
+
+if fs.exists("ResdacCore") then
+    handle = fs.open("ResdacCore", fs.exists("ResdacCore") and "r" or "w")
+    modem = handle.readLine()
+    modemport = tonumber(string.sub(modem,0,4))
+    modemwrap = string.sub(modem,5,modem:len())
+    modem = peripheral.wrap(modemwrap)
+    modem.open(modemport)
+    print('|  n:',modemport,'  M:0                                    |')
+    print('+=================================================+')
+    handle.close()
+    PrintMenuOne()
+    Menu()
+else
+    Init()
+end
