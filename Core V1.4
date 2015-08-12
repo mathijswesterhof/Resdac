@@ -1,0 +1,493 @@
+function split(str, pat)
+   local t = {}  -- NOTE: use {n = 0} in Lua-5.0
+   local fpat = "(.-)" .. pat
+   local last_end = 1
+   local s, e, cap = str:find(fpat, 1)
+   while s do
+      if s ~= 1 or cap ~= "" then
+     table.insert(t,cap)
+      end
+      last_end = e+1
+      s, e, cap = str:find(fpat, last_end)
+   end
+   if last_end <= #str then
+      cap = str:sub(last_end)
+      table.insert(t, cap)
+   end
+   return t
+end
+function Init()
+    -- needs val: i,j,pos,WanState, e,    side,Modem ModemSide
+    -- expl       counters          event array   (wanstate,side,Modem global)
+    term.setCursorPos(1,10)
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('|                                                 |')
+    print('+=================================================+')
+    term.setCursorPos(5,11)
+    local j = 0
+    local i = 0
+    local pos = 0
+    local ModemSide = {}
+    for i=1,#side do
+        if peripheral.isPresent(side[i]) and peripheral.getType(side[i]) == "modem" then
+            if peripheral.call( side[i], "isWireless" ) then
+                Modem[i] = "Wifi"
+                j = j + 1
+            else
+                Modem[i] = "lan"
+                table.insert(ModemSide,side[i])
+            end
+        else
+            Modem[i] = "rs"
+        end
+    end
+    if #ModemSide == 0 then
+        print("no wired modems found")
+    elseif #ModemSide == 1 then
+        if j == 0 then
+            print("no wireless modem")
+            sleep(2)
+            os.shutdown()
+        elseif j == 1 then
+            print("wireless modem is ok")
+            term.setCursorPos(5,12)
+            print("no Wan conection")
+            term.setCursorPos(5,14)
+            print("Continue? y - n")
+            while true do
+                local e = {os.pullEvent("key")}
+                if e[2] == keys.y then
+                    WanState = 0
+                    return
+                elseif e[2] == keys.n then
+                    os.shutdown()
+                end
+            end
+        else
+            print("to many wireless modems")
+            sleep(2)
+            os.shutdown()
+        end
+    elseif #ModemSide == 2 then
+        if j == 0 then
+            print("no wireless modem")
+            sleep(2)
+            os.shutdown()
+        elseif j == 1 then
+            print("wireless modem is ok")
+            term.setCursorPos(5,12)
+            print("lan  : "..ModemSide[1])
+            term.setCursorPos(5,13)
+            print("Wan  : "..ModemSide[2])
+            term.setCursorPos(3,15)
+            print("> Swap")
+            term.setCursorPos(5,16)
+            print("GO")
+            j = 1
+            pos = 1
+            while true do
+                local e = {os.pullEvent( "key" )}
+                if e[2] == keys.up or e[2] == keys.down then
+                    term.setCursorPos(3,14+pos)
+                    print(" ")
+                    term.setCursorPos(3,17-pos)
+                    print(">")
+                    pos = pos == 2 and pos-1 or pos+1
+                elseif e[2] == keys.enter then
+                    if pos == 1 then
+                        term.setCursorPos(12,13)
+                        print(ModemSide[j])
+                        term.setCursorPos(12,12)
+                        print(ModemSide[3-j])
+                        j = j == 2 and j-1 or j+1
+                    else
+                        for i=1,#Modem do
+                            if Modem[i] == "lan" then
+                                if j == 1 then
+                                    j = 2
+                                else
+                                    Modem[i] = "wan"
+                                    j = 1
+                                end
+                            end
+                        end
+                        WanState = 1
+                        return
+                    end
+                end
+            end
+        else
+            print("to many wireless modems")
+            sleep(2)
+            os.shutdown()
+        end
+    elseif #ModemSide > 2 then
+        print("more than three modems")
+        sleep(2)
+        os.shutdown()
+    end
+end
+function InitFT() 
+    --needs val: WanState,i,j,pos, H,     Modem,side,State,OnSignal,OffSignal,HandleArray
+    --expl       counters          handle Arrays      (all arrays and WanState global)
+    term.setCursorPos(1,10)
+    print('|   Redstone         on cmd         off cmd       |')
+    print('| >         : true  :              :              |')
+    print('|           : true  :              :              |')
+    print('|           : true  :              :              |')
+    if WanState == 0 then
+        print('|           : true  :              :              |')
+    else
+        print('|                                                 |')
+    end
+    print('|                                                 |')
+    print('|   GO                                            |')
+    print('|                                                 |')
+    print('+=================================================+')
+    local i = 0
+    local j = 1
+    local pos = 1
+    for i=1,#Modem do
+        if Modem[i] == "rs" then
+            term.setCursorPos(5,10 + j)
+            print(side[i])
+            j = j + 1
+        end
+    end
+
+    State = {"true","true","true","true"}
+    OnSignal = {" "," "," "," "}
+    OffSignal = {" "," "," "," "}
+    while true do
+        local e = {os.pullEvent( "key" )}
+        if e[2] == keys.enter then
+            if pos < (5 - WanState) then
+                term.setCursorPos(21,10 + pos)
+                print(">              ")
+                term.setCursorPos(22,10 + pos)
+                OnSignal[pos] = read()
+                term.setCursorPos(21,10 + pos)
+                print(":")
+                term.setCursorPos(36,10 + pos)
+                print(">              ")
+                term.setCursorPos(37,10 + pos)
+                OffSignal[pos] = read()
+                term.setCursorPos(36,10 + pos)
+                print(":")
+            elseif pos == (5 - WanState) then
+                i = 0
+                j = 0
+                for i=1,(4 - WanState) do
+                    if State[i] == "true" then
+                        if OnSignal[i] == OffSignal[i] then
+                            term.setCursorPos(22,10 + i)
+                            print("Wrong         :Wrong         ")
+                            j = 1
+                        end
+                    end
+                end
+                if j ~= 1 then
+                    term.setCursorPos(1,10)
+                    print('|                                                 |')
+                    print('|                                                 |')
+                    print('|                                                 |')
+                    print('|              Setting things up                  |')
+                    print('|              For you                            |')
+                    print('|                                                 |')
+                    print('|                                                 |')
+                    print('|                                                 |')
+                    print('+=================================================+')
+                    j = 1
+                    for i=1,6 do
+                        if Modem[i] == "rs" then
+                            HandleArray[1][i] = Modem[i]
+                            HandleArray[2][i] = State[j]
+                            HandleArray[3][i] = OnSignal[j]
+                            HandleArray[4][i] = OffSignal[j]
+                            j = j + 1
+                        else
+                            HandleArray[1][i] = Modem[i]
+                            HandleArray[2][i] = "false"
+                            HandleArray[3][i] = ""
+                            HandleArray[4][i] = ""
+                        end
+                        HandleArray[5][1] = 1110
+                    end
+                    local H = fs.open("ResdacCore","w")
+                    H.write(textutils.serialize(HandleArray))
+                    H.close()
+                    sleep(2)
+                    os.reboot()
+                end
+            end
+        elseif e[2] == keys.left or e[2] == keys.right then
+            term.setCursorPos(15,pos+10)
+            if State[pos] == "true" then
+                State[pos] = "inv"
+                print("inv")
+            elseif State[pos] == "inv" then
+                State[pos] = "false"
+                print("false")
+            else
+                State[pos] = "true"
+                print("true ")
+            end
+        elseif e[2] == keys.up then
+            SCP = 10 + pos
+            if SCP == 15 - WanState then
+                SCP = 16
+            end
+            term.setCursorPos(3,SCP)
+            print(' ')
+            pos = pos - 1
+            if pos == 0 then
+                pos = 5 - WanState
+            end
+            SCP = 10 + pos
+            if SCP == 15 - WanState then
+                SCP = 16
+            end
+            term.setCursorPos(3,SCP)
+            print('>')
+            term.setCursorPos(9,17)
+            print(pos)
+        elseif e[2] == keys.down then
+            SCP = 10 + pos
+            if SCP == 15 - WanState then
+                SCP = 16
+                pos = 5
+            end
+            term.setCursorPos(3,SCP)
+            print(' ')
+            pos = pos + 1
+            if pos == 6 then
+                pos = 1
+            end
+            SCP = 10 + pos
+            if SCP == 15 - WanState then
+                SCP = 16
+                pos = 5 - WanState
+            end
+            term.setCursorPos(3,SCP)
+            print('>')
+            term.setCursorPos(9,17)
+            print(pos)
+        end
+    end
+end
+function Main()
+    pos = 1
+    while true do
+        local event, value1, value2, value3, value4, value5 = os.pullEvent()
+        if event == "key" then
+            if value1 == keys.enter then
+                if pos == 1 then
+                    term.clear()
+                    term.setCursorPos(1,1)
+                    break
+                elseif pos == 2 then
+                    fs.delete("ResdacCore")
+                    os.reboot()
+                elseif pos == 3 then
+                    os.shutdown()
+                end
+            elseif value1 == keys.down then
+                term.setCursorPos(3,(11 + pos))
+                print(" ")
+                pos = pos + 1
+                if pos == 4 then
+                    pos = 1
+                end 
+                term.setCursorPos(3,(11 + pos))
+                print(">")
+            elseif value1 == keys.up then
+                term.setCursorPos(3,(11 + pos))
+                print(" ")
+                pos = pos - 1
+                if pos == 0 then
+                    pos = 3
+                end 
+                term.setCursorPos(3,(11 + pos))
+                print(">")
+            end
+        elseif event == "modem_message" then
+            term.setCursorPos(3,17)
+            if value4 == "NEWPC" then
+                print("ERROR:NONUM                         ")
+            elseif string.sub(value4,0,5) == "NEWPC" then
+                codeline = string.sub(value4,6)
+
+                term.setCursorPos(3,17)
+                -- set optBool
+                OptBooleanNeg = false
+                for i=1,#HandleArray[5] do
+                    if HandleArray[5][i] == codeline then
+                        OptBooleanNeg = true
+                    end
+                end
+                if OptBooleanNeg == true then
+                    print("ERROR:USEDNUM                       ")
+                    lan.transmit( 0, 1110,"false")
+                else
+                    print("new: "..codeline)
+                    lan.transmit( 0, 1110,"true")
+                    fs.delete("ResdacCore")
+                    table.insert(HandleArray[5], codeline)
+                    local H = fs.open("ResdacCore","w")
+                    H.write(textutils.serialize(HandleArray))
+                    H.close()
+                end
+            elseif string.sub(value4,0,5) == "wifi#" or string.sub(value4,0,4) == "lan#" then
+                rednetArr = split(value4,"#")
+                if #rednetArr == 1 then
+                    lan.transmit( value3, 1110,"error ocured while sending")
+                elseif #rednetArr == 2 then
+                    if rednetArr[1] == "wifi" then
+                        wifi.transmit(65535,2220,"hello")
+                        --wifi.transmit(65535,2220,rednetArr[2])
+                    elseif rednetArr[1] == "lan" then
+                        lan.transmit( value3, 1110,"error ocured while sending")
+                    end
+                elseif #rednetArr == 3 then
+                    if rednetArr[1] == "wifi" then
+                        wifi.transmit(tonumber(rednetArr[2]), 2220,rednetArr[3])
+                    elseif rednetArr[1] == "lan" then
+                        lan.transmit(tonumber(rednetArr[2]), 1110,rednetArr[3])
+                    end
+                elseif #rednetArr == 4 then
+                    if rednetArr[1] == "wifi" then
+                        wifi.transmit(tonumber(rednetArr[2]), 2220,rednetArr[3].."#"..rednetArr[4])
+                    elseif rednetArr[1] == "lan" then
+                        lan.transmit(tonumber(rednetArr[2]), 1110,rednetArr[3].."#"..rednetArr[4])
+                    end
+                end
+            elseif string.sub(value4,0,9) == "rslookup#" then
+                rednetArr = split(value4,"#")
+                if #rednetArr == 1 then
+                    lan.transmit( value3, 1110,"error ocured while searching")
+                elseif #rednetArr == 2 then
+                    rednet.lookup(rednetArr[2])
+                elseif #rednetArr == 3 then
+                    rednet.lookup(rednetArr[2],rednetArr[3])
+                elseif #rednetArr == 4 then
+                    lan.transmit( value3, 1110,"error ocured while searching")
+                end
+            end
+            for i=1,6 do
+                if value4 == HandleArray[3][i] then
+                    if HandleArray[2][i] == "true" then
+                        redstone.setOutput(side[i],true)
+                    elseif HandleArray[2][i] == "inv" then
+                        redstone.setOutput(side[i],false)
+
+                    end
+                end
+                if value4 == HandleArray[4][i] then
+                    if HandleArray[2][i] == "true" then
+                        redstone.setOutput(side[i],false)
+                    elseif HandleArray[2][i] == "inv" then
+                        redstone.setOutput(side[i],true)
+                    end
+                end
+            end
+        elseif event == "rednet_message" then
+            term.setCursorPos(3,17)
+            -- needs a terminal memory system for messages
+            print("rednetmessage")
+            for i=1,#PortArray do
+                if PortArray[i] == "1110" then
+                else
+                    lan.transmit( tonumber(PortArray[i]), 1110,"rednet:"..value2.."  from:"..value1)
+                end
+            end
+        end
+    end
+end
+function Boot()
+    -- needs val: i,handle,handleString,handleArray,side,wifi,lan,wan,rsArraySide,rsArrayOn,rsArrayOf,Portstring,length,
+    term.clear()
+    term.setCursorPos(1,1)
+    print('+=================================================+')
+    print('|                                                 |')
+    print('|                 ----   ---   +---   +----       |')
+    print('| R E S D A C    /      /   \\  |   \\  |           |')
+    print('|                |      |   |  +----  +--         |')
+    print('|                \\      \\   /  |  \\   |           |')
+    print('|                 ----   ---   |   \\  +---- V1.4  |')
+    print('| setup                                           |')
+    print('+=================================================+')
+    local i = 0
+    local j = 0
+
+
+
+    while i < 3 do
+        term.setCursorPos(45,8)
+        textutils.slowWrite(". . .")
+        term.setCursorPos(45,8)
+        textutils.slowWrite("     ")
+        i = i+1
+    end
+    
+    if fs.exists("ResdacCore") then
+        H = fs.open("ResdacCore","r")
+        HandleData = H.readAll()
+        H.close()
+        HandleArray = textutils.unserialize(HandleData)
+        for i=1,6 do
+            if HandleArray[1][i] == "Wifi" then
+                wifi = peripheral.wrap(side[i])
+                wifi.open(os.getComputerID())
+                wifi.open(65535)
+            elseif HandleArray[1][i] == "lan" then
+                lan = peripheral.wrap(side[i])
+                lan.open(1110)
+            elseif HandleArray[1][i] == "wan" then
+                wan = peripheral.wrap(side[i])
+                wan.open(os.getComputerID())
+            elseif HandleArray[1][i] == "rs" then
+                if HandleArray[2][i] == "inv" then
+                    rs.setOutput(side[i],true)
+                else
+                    rs.setOutput(side[i],false)
+                end
+            end
+        end
+
+        term.setCursorPos(3,8)
+        print("online")
+        term.setCursorPos(1,10)
+        print('|                                                 |')
+        print('|                                                 |')
+        print('| > openCore                                      |')
+        print('|   reset                                         |')
+        print('|   exit                                          |')
+        print('|                                                 |')
+        print('|                                                 |')
+        print('|                                                 |')
+        print('+=================================================+')   
+
+        Main()
+    else
+        Init()
+        InitFT()
+    end
+end
+-- glob vars --
+    side = rs.getSides()
+    Modem = {}
+    State = {}
+    OnSignal = {}
+    OffSignal = {}
+    HandleArray = {{},{},{},{},{}} -- modem,state,on,off,Modemidlan
+    WanState = 0
+    local oldpull=os.pullEvent
+    os.pullEvent=os.pullEventRaw
+    
+    Boot()
