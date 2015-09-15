@@ -441,7 +441,22 @@
                         lan.transmit( value3, 1110,"error ocured while searching")
                     end
                 end
-               
+                for i=1,6 do
+                    if value4 == HandleArray[3][i] then
+                        if HandleArray[2][i] == "true" then
+                            redstone.setOutput(side[i],true)
+                        elseif HandleArray[2][i] == "inv" then
+                            redstone.setOutput(side[i],false)
+                        end
+                    end
+                    if value4 == HandleArray[4][i] then
+                        if HandleArray[2][i] == "true" then
+                            redstone.setOutput(side[i],false)
+                        elseif HandleArray[2][i] == "inv" then
+                            redstone.setOutput(side[i],true)
+                        end
+                    end
+                end
             elseif event == "rednet_message" then
                 term.setCursorPos(3,17)
                 -- needs a terminal memory system for messages
