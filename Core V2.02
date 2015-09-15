@@ -229,7 +229,7 @@
                         HandleArray = {{},{}} -- id,mssg
                         local H = fs.open("MssgDac",fs.exists("MssgDac") and "r" or "w")
                         H.write(textutils.serialize(HandleArray))
-                        h.close()
+                        H.close()
                         sleep(2)
                         os.reboot()
                     end
